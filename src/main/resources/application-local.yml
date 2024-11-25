@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://${db_url}/gambling?autoReconnect=true&rewriteBatchedStatements=true
+    username: ${db_username}
+    password: ${db_password}
+    driver-class-name: org.mariadb.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      generate-ddl: false
+      hibernate:
+        show_sql: true
+        default_batch_fetch_size: 50
+        format_sql: true
+
+springdoc:
+  api-docs:
+    enabled: true
