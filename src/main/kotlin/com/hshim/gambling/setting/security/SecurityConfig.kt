@@ -16,15 +16,17 @@ class SecurityConfig {
         http
             .authorizeHttpRequests { requests ->
                 requests
-                    .requestMatchers("/login.html", "/login").permitAll()
+                    .requestMatchers(
+                        "/login.html",
+                        "/login",
+                    ).permitAll()
                     .anyRequest().authenticated()
             }
             .oauth2Login { oauth2Login ->
                 oauth2Login
                     .loginPage("/login")
-                    .successHandler { _, response, _ ->
-                        response.sendRedirect("/account/oauth/discord") // 성공 후 /home으로 강제 이동
-                    }
+                    .defaultSuccessUrl("/login/oauth2/code/discord", true)
+                    .successHandler(CustomAuthenticationSuccessHandler())
             }
             .httpBasic { httpBasic ->
                 httpBasic.authenticationEntryPoint { _, response, _ ->
@@ -34,6 +36,16 @@ class SecurityConfig {
             .sessionManagement { sessionManagement ->
                 sessionManagement.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             }
+            .csrf { csrf ->
+                csrf.ignoringRequestMatchers("/logout")
+            }
+            .logout { logout ->
+                logout
+                    .logoutUrl("/logout")
+                    .logoutSuccessUrl("/login")
+                    .invalidateHttpSession(true)
+                    .deleteCookies("JSESSIONID")
+                }
         return http.build()
     }
 }

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <title>Main Page</title>
+</head>
+<body>
+<h1>Welcome, Main Page</h1>
+
+<!-- POST 방식 로그아웃 -->
+<form th:action="@{/logout}" method="post" style="display:inline;">
+    <input type="hidden" name="_csrf" th:value="${_csrf.token}" />
+    <button type="submit">Logout</button>
+</form>
+
+</body>
+</html>
