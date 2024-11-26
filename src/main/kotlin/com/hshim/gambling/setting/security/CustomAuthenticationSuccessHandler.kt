@@ -13,7 +13,6 @@ class CustomAuthenticationSuccessHandler : AuthenticationSuccessHandler {
         response: HttpServletResponse,
         authentication: Authentication
     ) {
-        println("Authentication Success: ${authentication.principal}")
         response.sendRedirect("/")
     }
 }
