@@ -6,11 +6,11 @@ import com.hshim.gambling.enums.account.DiscordPremiumType
 class DiscordOauthAttribute(
     val id: String,
     val username: String,
-    val avatar: String,
+    val avatar: String?,
     val discriminator: String,
     val publicFlags: Int,
     val flags: Int,
-    val banner: String,
+    val banner: String?,
     val accentColor: String?,
     val globalName: String,
     val avatarDecorationData: String?,
@@ -26,11 +26,11 @@ class DiscordOauthAttribute(
     constructor(attributeMap: Map<String, Any>) : this(
         id = attributeMap["id"] as String,
         username = attributeMap["username"] as String,
-        avatar = attributeMap["avatar"] as String,
+        avatar = attributeMap["avatar"] as String?,
         discriminator = attributeMap["discriminator"] as String,
         publicFlags = attributeMap["public_flags"] as Int,
         flags = attributeMap["flags"] as Int,
-        banner = attributeMap["banner"] as String,
+        banner = attributeMap["banner"] as String?,
         accentColor = attributeMap["accent_color"] as String?,
         globalName = attributeMap["global_name"] as String,
         avatarDecorationData = attributeMap["avatar_decoration_data"] as String?,
@@ -58,5 +58,6 @@ class DiscordOauthAttribute(
         discordUser.banner = this.banner
         discordUser.premiumType = this.premiumTypeEnum
         discordUser.displayName = this.globalName
+        discordUser.profileUrl = this.avatar?.let { "https://cdn.discordapp.com/avatars/$id/$it" }
     }
 }

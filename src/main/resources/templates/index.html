@@ -10,6 +10,10 @@
             font-family: Arial, sans-serif;
         }
 
+        .container {
+            max-width: 40px;
+        }
+
         .header {
             position: fixed;
             top: 0;
@@ -90,21 +94,23 @@
     </style>
 </head>
 <body>
-<div class="header">
-    <div class="user-info" id="user-info">
-        <div class="profile-img" id="profile-img">
-            <img id="profile-image" src="" alt="" />
-        </div>
-        <div class="user-details">
-            <div class="display-name" id="display-name"></div>
-            <div class="display-user-type" id="display-user-type"></div>
-        </div>
-        <div class="dropdown" id="dropdown">
-            <button id="my-info">내 정보</button>
-            <form th:action="@{/logout}" method="post" style="margin: 0;">
-                <input type="hidden" name="_csrf" th:value="${_csrf.token}" />
-                <button type="submit">로그아웃</button>
-            </form>
+<div class="container">
+    <div class="header">
+        <div class="user-info" id="user-info">
+            <div class="profile-img" id="profile-img">
+                <img id="profile-image" src="" alt="" />
+            </div>
+            <div class="user-details">
+                <div class="display-name" id="display-name"></div>
+                <div class="display-user-type" id="display-user-type"></div>
+            </div>
+            <div class="dropdown" id="dropdown">
+                <button id="my-info">내 정보</button>
+                <form th:action="@{/logout}" method="post" style="margin: 0;">
+                    <input type="hidden" name="_csrf" th:value="${_csrf.token}" />
+                    <button type="submit">로그아웃</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -134,10 +140,15 @@
         fetchUserInfo();
 
         const userInfo = document.getElementById('user-info');
+        const myInfo = document.getElementById('my-info');
         const dropdown = document.getElementById('dropdown');
 
         userInfo.addEventListener('click', () => {
             dropdown.classList.toggle('open');
+        });
+
+        myInfo.addEventListener('click', () => {
+            location.href = '/page/account/user/my-info'
         });
 
         document.addEventListener('click', (event) => {

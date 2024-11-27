@@ -17,10 +17,9 @@ class CustomOAuth2UserService(
     override fun loadUser(userRequest: OAuth2UserRequest): OAuth2User {
         val oAuth2User = super.loadUser(userRequest)
         val attribute = getDiscordAttribute(oAuth2User)
-        val user = discordUserRepository.findByDiscordId(attribute.id)
-            ?.apply { attribute.updateTo(this) }
-            ?: attribute.toEntity()
-        discordUserRepository.save(user)
+        if (!discordUserRepository.existsByDiscordId(attribute.id)) {
+            discordUserRepository.save(attribute.toEntity())
+        }
         return oAuth2User
     }
 

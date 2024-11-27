@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface DiscordUserRepository: JpaRepository<DiscordUser, String> {
     fun findByDiscordId(discordId: String): DiscordUser?
+    fun existsByDiscordId(discordId: String): Boolean
 }

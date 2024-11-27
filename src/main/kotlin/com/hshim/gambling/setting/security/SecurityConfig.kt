@@ -27,6 +27,7 @@ class SecurityConfig(
             .authorizeHttpRequests { requests ->
                 requests
                     .requestMatchers(
+                        "/error",
                         "/login.html",
                         "/login",
                     ).permitAll()
@@ -55,7 +56,7 @@ class SecurityConfig(
                     .logoutSuccessUrl("/login")
                     .invalidateHttpSession(true)
                     .deleteCookies("JSESSIONID")
-                }
+            }
         return http.build()
     }
 }
