@@ -13,6 +13,8 @@ spring:
         show_sql: true
         default_batch_fetch_size: 50
         format_sql: true
+  security:
+    enabled: true
 
 springdoc:
   api-docs:

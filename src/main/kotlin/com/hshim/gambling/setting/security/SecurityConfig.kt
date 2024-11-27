@@ -1,6 +1,7 @@
 package com.hshim.gambling.setting.security
 
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -10,9 +11,18 @@ import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfig {
+class SecurityConfig(
+    @Value("\${spring.security.enabled:true}")
+    private val securityEnabled: Boolean,
+) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        if (!securityEnabled) {
+            http.authorizeHttpRequests { it.anyRequest().permitAll() }
+                .csrf { it.disable() }
+            return http.build()
+        }
+
         http
             .authorizeHttpRequests { requests ->
                 requests

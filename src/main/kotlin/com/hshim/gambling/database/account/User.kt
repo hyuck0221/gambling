@@ -27,4 +27,19 @@ class User(
 
     @Column(nullable = false)
     var displayName: String,
+
+    @Column(nullable = false)
+    var disable: Boolean = false,
+
+    @Column(nullable = true)
+    var profileUrl: String?,
+
+    @Column(nullable = false)
+    var money: Long = 5000,
+
+    @Column(nullable = false)
+    var borrowedMoney: Long = 0,
+
+    @Column(nullable = false)
+    var point: Long = 0,
 ) : BaseTimeEntity()

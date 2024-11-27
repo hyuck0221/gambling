@@ -29,6 +29,5 @@ class DiscordUser(
 ) : User(
     displayName = globalName,
     userType = UserType.DISCORD,
-) {
-    fun getAvatarUrl() = "https://cdn.discordapp.com/avatars/$discordId/$avatar"
-}
+    profileUrl = avatar?.let { "https://cdn.discordapp.com/avatars/$discordId/$it" }
+)
