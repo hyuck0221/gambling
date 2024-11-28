@@ -33,6 +33,11 @@ class UserService(
         return getUser(discordUser.id)
     }
 
+    fun getUser(): User {
+        val attribute = customOAuth2UserService.getDiscordAttribute()
+        return getUserByDiscordId(attribute.id)
+    }
+
     @Transactional(readOnly = true)
     fun getInfo(id: String): UserResponse {
         val user = getUser(id)
@@ -46,12 +51,6 @@ class UserService(
     ): UserResponse {
         val user = getUser(id)
         req.updateTo(user)
-        return UserResponse(user)
-    }
-
-    @Transactional(readOnly = true)
-    fun getInfoByDiscordId(discordId: String): UserResponse {
-        val user = getUserByDiscordId(discordId)
         return UserResponse(user)
     }
 
