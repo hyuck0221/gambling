@@ -14,6 +14,6 @@ class NoticeController(private val noticeService: NoticeService) {
         return noticeService.getNoticeInfos(isRead)
     }
 
-    @PutMapping("/{id}/read")
-    fun read(@PathVariable id: String) = noticeService.read(id)
+    @PutMapping("/{id}/check")
+    fun check(@PathVariable id: String) = noticeService.check(id)
 }

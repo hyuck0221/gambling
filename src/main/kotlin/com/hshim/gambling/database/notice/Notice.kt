@@ -2,6 +2,7 @@ package com.hshim.gambling.database.notice
 
 import com.hshim.gambling.database.account.User
 import com.hshim.gambling.database.base.BaseTimeEntity
+import com.hshim.gambling.database.present.Present
 import com.hshim.gambling.enums.notice.NoticeType
 import io.autocrypt.sakarinblue.universe.util.CommonUtil.uuid
 import jakarta.persistence.*
@@ -15,10 +16,14 @@ class Notice(
     var id: String = uuid(),
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = false)
     val user: User,
 
-    @Column(nullable = false, unique = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "present_id", nullable = true)
+    val present: Present?,
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     val noticeType: NoticeType,
 
@@ -27,4 +32,8 @@ class Notice(
 
     @Column(nullable = false)
     val description: String,
-) : BaseTimeEntity()
+) : BaseTimeEntity() {
+    fun read() {
+        isRead = true
+    }
+}

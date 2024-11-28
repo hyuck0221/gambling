@@ -6,6 +6,7 @@ import io.autocrypt.sakarinblue.universe.util.DateUtil.dateToString
 
 class NoticeResponse (
     val noticeId: String,
+    val presentId: String?,
     val description: String,
     val noticeType: NoticeType,
     val title: String = noticeType.title,
@@ -15,6 +16,7 @@ class NoticeResponse (
 ) {
     constructor(notice: Notice): this (
         noticeId = notice.id,
+        presentId = notice.present?.id,
         description = notice.description,
         noticeType = notice.noticeType,
         date = notice.createDate.dateToString(),
