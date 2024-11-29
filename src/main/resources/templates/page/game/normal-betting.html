@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>배팅 게임</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding-top: 70px;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            width: 100%;
+            margin-bottom: 20px;
+            position: fixed;
+            top: 0;
+            right: 0;
+            padding: 10px 20px;
+            background-color: #f5f5f5;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            z-index: 1000;
+            justify-content: flex-end;
+            box-sizing: border-box;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .profile-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ccc;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .profile-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-details {
+            margin-left: 10px;
+        }
+
+        .display-name {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .display-money {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+        }
+
+        .dropdown button {
+            background: none;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .dropdown button:hover {
+            background-color: #f0f0f0;
+        }
+
+        .dropdown.open {
+            display: flex;
+        }
+
+        .icon-button img {
+            width: 24px;
+            height: 24px;
+        }
+
+        .container {
+            margin-top: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .game-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .game-info img {
+            width: 80px;
+            height: 80px;
+        }
+
+        .game-info h1 {
+            font-size: 2em;
+            color: #000000;
+        }
+
+        .betting-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .betting-container input {
+            width: 200px;
+            padding: 10px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .betting-container button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .betting-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .percent-display {
+            font-size: 3em;
+            color: #FFD700;
+            margin: 20px 0;
+            opacity: 0;
+            transform: scale(0);
+            transition: transform 1s ease-out, opacity 0.5s ease-out;
+        }
+
+        .result {
+            text-align: center;
+            font-size: 4em;
+            margin: 20px 0;
+            opacity: 0;
+            transition: opacity 1s ease-out;
+        }
+
+        .result.win {
+            text-align: center;
+            color: #00ff00;
+        }
+
+        .result.lose {
+            text-align: center;
+            color: #ff0000;
+        }
+
+        .fade-buttons {
+            margin-top: 20px;
+            opacity: 0;
+            display: none;
+            transition: opacity 1s ease-out;
+        }
+
+        .fade-buttons button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .fade-buttons .main-button {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .fade-buttons .retry-button {
+            background-color: #ffc107;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="user-info" id="user-info">
+        <div class="profile-img" id="profile-img">
+            <img id="profile-image" src="" alt=""/>
+        </div>
+        <div class="user-details">
+            <div class="display-name" id="display-name"></div>
+            <div class="display-money" id="display-money"></div>
+        </div>
+        <div class="dropdown" id="dropdown">
+            <button id="my-info">내 정보</button>
+            <form th:action="@{/logout}" method="post" style="margin: 0;">
+                <input id="csrf-token" type="hidden" name="_csrf" th:value="${_csrf.token}"/>
+                <button type="submit">로그아웃</button>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <div class="game-info">
+        <img id="game-icon" src="" alt="게임 아이콘">
+        <h1 id="game-name"></h1>
+    </div>
+    <p id="can-use-cost">배팅 가능 금액: 0</p>
+    <div class="betting-container" id="betting-container">
+        <input type="number" id="betting-amount" placeholder="배팅 금액 입력">
+        <button id="bet-button">배팅</button>
+    </div>
+    <div id="percent-display" class="percent-display">0%</div>
+    <div id="result" class="result"></div>
+    <div class="fade-buttons" id="fade-buttons">
+        <button class="main-button" onclick="location.href='/main'">메인으로</button>
+        <button class="retry-button" onclick="location.reload()">다시하기</button>
+    </div>
+</div>
+
+<script>
+    const csrfToken = document.getElementById('csrf-token').value;
+    let userId = null;
+    fetchUserInfo();
+
+    // 유저 정보 가져오기
+    async function fetchUserInfo() {
+        const response = await fetch('/account/user/my-info');
+        if (response.ok) {
+            const userInfo = await response.json();
+            userId = userInfo.id;
+
+            const profileImg = document.getElementById('profile-image');
+            const displayName = document.getElementById('display-name');
+            const displayMoney = document.getElementById('display-money');
+            const totalMoney = userInfo.money + userInfo.borrowedMoney;
+
+            displayName.textContent = userInfo.displayName;
+            displayMoney.textContent = '돈: ' + totalMoney + ' | 포인트: ' + userInfo.point;
+
+            if (userInfo.profileUrl) {
+                profileImg.src = userInfo.profileUrl;
+                profileImg.style.backgroundColor = 'transparent';
+            } else {
+                profileImg.src = '';
+                profileImg.style.backgroundColor = '#ccc';
+            }
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        const gameMode = "NORMAL_BETTING"; // 임시 게임 모드
+        const bettingContainer = document.getElementById("betting-container");
+        const percentDisplay = document.getElementById("percent-display");
+        const resultDisplay = document.getElementById("result");
+        const fadeButtons = document.getElementById("fade-buttons");
+        const myInfo = document.getElementById('my-info');
+
+        myInfo.addEventListener('click', () => {
+            location.href = '/page/account/user/my-info';
+        });
+
+        // 게임 정보 가져오기
+        const response = await fetch(`/game?gameMode=${gameMode}`);
+        const data = await response.json();
+        document.getElementById("game-icon").src = `${window.location.origin}${data.icon}`;
+        document.getElementById("game-name").textContent = data.name;
+        document.getElementById("can-use-cost").textContent = `배팅 가능 금액: ${data.canUseCost}`;
+
+        const minCost = data.minCost;
+        const maxCost = data.maxCost || Infinity;
+        const canUseCost = data.canUseCost;
+
+        // 배팅 버튼 클릭 이벤트
+        document.getElementById("bet-button").addEventListener("click", handleBetting);
+
+        async function handleBetting() {
+            const bettingAmount = parseInt(document.getElementById("betting-amount").value);
+            if (isNaN(bettingAmount)) {
+                alert("배팅 금액을 입력해주세요.");
+                return;
+            }
+            if (bettingAmount < minCost) {
+                alert(`최소 배팅 금액은 ${minCost}입니다.`);
+                return;
+            }
+            if (bettingAmount > maxCost) {
+                alert(`최대 배팅 금액은 ${maxCost}입니다.`);
+                return;
+            }
+            if (bettingAmount > canUseCost) {
+                alert(`배팅 가능 금액을 초과했습니다.`);
+                return;
+            }
+
+            bettingContainer.style.display = "none";
+
+            // 배팅 API 호출
+            const bettingResponse = await fetch(`/game/normal-betting/issue`, {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({ cost: bettingAmount }),
+            });
+            const bettingData = await bettingResponse.json();
+
+            // Percent 애니메이션
+            const targetPercent = bettingData.percent;
+            let currentPercent = 0;
+            const interval = setInterval(() => {
+                if (currentPercent >= targetPercent) {
+                    clearInterval(interval);
+                    percentDisplay.textContent = `${targetPercent}%`;
+                    setTimeout(() => revealResult(bettingData.bettingId, bettingAmount), 2000);
+                } else {
+                    currentPercent += Math.max(1, (targetPercent - currentPercent) * 0.05);
+                    percentDisplay.textContent = `${Math.floor(currentPercent)}%`;
+                    percentDisplay.style.transform = `scale(${1 + currentPercent / 100})`;
+                }
+            }, 30);
+            percentDisplay.style.opacity = 1;
+        }
+
+        async function revealResult(bettingId, bettingAmount) {
+            const resultResponse = await fetch(`/game/normal-betting/${bettingId}/result`);
+            const resultData = await resultResponse.json();
+            resultDisplay.textContent = resultData.isWin ? "승리!" : "패배!";
+            resultDisplay.classList.add(resultData.isWin ? "win" : "lose");
+            resultDisplay.style.opacity = 1;
+
+            const amountDisplay = document.createElement("div");
+            amountDisplay.textContent = `${resultData.isWin ? "+" : "-"}${bettingAmount}`;
+            amountDisplay.style.fontSize = "2em";
+            amountDisplay.style.marginTop = "20px";
+            resultDisplay.appendChild(amountDisplay);
+
+            await fetchUserInfo();
+
+            // 버튼 페이드 인
+            setTimeout(() => {
+                fadeButtons.style.display = "flex";
+                fadeButtons.style.opacity = 1;
+            }, 1000);
+        }
+    });
+</script>
+</body>
+</html>

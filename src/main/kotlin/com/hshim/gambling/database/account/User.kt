@@ -2,6 +2,7 @@ package com.hshim.gambling.database.account
 
 import com.hshim.gambling.database.base.BaseTimeEntity
 import com.hshim.gambling.enums.account.UserType
+import com.hshim.gambling.enums.game.GameMode
 import io.autocrypt.sakarinblue.universe.util.CommonUtil.uuid
 import jakarta.persistence.*
 
@@ -42,4 +43,32 @@ class User(
 
     @Column(nullable = false)
     var point: Long = 0,
-) : BaseTimeEntity()
+) : BaseTimeEntity() {
+    fun lose(
+        gameMode: GameMode,
+        cost: Long,
+    ) {
+        when {
+            gameMode.onlyPoint -> point -= cost
+            gameMode.canUsePoint -> {
+                point -= cost
+                if (point < 0) {
+                    val remainingCost = point * -1
+                    money -= remainingCost
+                    point = 0
+                    if (remainingCost < 0) {
+                        borrowedMoney -= remainingCost * -1
+                        money = 0
+                    }
+                }
+            }
+            else -> {
+                money -= cost
+                if (money < 0) {
+                    borrowedMoney -= money * -1
+                    money = 0
+                }
+            }
+        }
+    }
+}
