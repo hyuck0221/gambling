@@ -10,27 +10,27 @@ enum class NoticeType(
     PRESENT_POINT(
         title = "포인트 선물",
         isOption = false,
-        icon = "present-point.webp",
+        icon = "present-point.png",
     ),
     PRESENT_MONEY(
         title = "지원금",
         isOption = false,
-        icon = "present-money.webp",
+        icon = "present-money.png",
     ),
     DONATE(
         title = "기부금",
         isOption = true,
-        icon = "donate.webp",
+        icon = "donate.png",
     ),
     DONATE_RESPONSE(
         title = "기부금 응답",
         isOption = false,
-        icon = "donate-response.webp",
+        icon = "donate.png",
     ),
     INVITE_GAME(
         title = "게임 초대",
         isOption = true,
-        icon = "invite-game.webp",
+        icon = "invite-game.png",
     ),
     ;
 

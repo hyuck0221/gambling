@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html lang="en">
 <head>
     <title>Main Page</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,6 +20,35 @@
             display: flex;
             align-items: center;
             z-index: 1000;
+        }
+
+        .icon-button {
+            position: relative;
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .icon-button img {
+            width: 24px;
+            height: 24px;
+        }
+
+        .notification-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: red;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .search-user-button {
@@ -103,6 +132,103 @@
             display: flex;
         }
 
+        .notification-box {
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            max-width: 350px;
+            width: 100%;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        .notification-box.open {
+            display: flex;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .notification-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .notification-icon img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .notification-description {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .notification-date {
+            font-size: 10px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .notification-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .notification-actions button {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .button-confirm {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+        }
+
+        .button-cancel {
+            background-color: white;
+            border: 1px solid #007BFF;
+            color: #007BFF;
+        }
+
+        .button-confirm:hover {
+            background-color: #0056b3;
+        }
+
+        .button-cancel:hover {
+            border-color: #0056b3;
+            color: #0056b3;
+        }
+
         .dialog-overlay {
             position: fixed;
             top: 0;
@@ -134,7 +260,7 @@
         .dialog input {
             width: 70%;
             padding: 8px;
-            margin-bottom: 10px; /* 인풋박스 아래 간격 추가 */
+            margin-bottom: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
         }
@@ -222,6 +348,10 @@
 </head>
 <body>
 <div class="header">
+    <button class="icon-button" id="notification-button">
+        <img src="/icon/notice/notice-button.png" alt="알림">
+        <span class="notification-count" id="notification-count" style="display: none;">0</span>
+    </button>
     <button id="search-user-button" class="search-user-button">유저 검색</button>
     <div class="user-info" id="user-info">
         <div class="profile-img" id="profile-img">
@@ -234,14 +364,15 @@
         <div class="dropdown" id="dropdown">
             <button id="my-info">내 정보</button>
             <form th:action="@{/logout}" method="post" style="margin: 0;">
-                <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
+                <input id="csrf-token" type="hidden" name="_csrf" th:value="${_csrf.token}"/>
                 <button type="submit">로그아웃</button>
             </form>
         </div>
     </div>
 </div>
 
-<!-- 다이얼로그 -->
+<div class="notification-box" id="notification-box"></div>
+
 <div class="dialog-overlay" id="dialog-overlay"></div>
 <div class="dialog" id="search-dialog">
     <div style="text-align: right;">
@@ -250,16 +381,32 @@
     <div class="dialog-content">
         <div>
             <input id="search-input" type="text" placeholder="유저이름 입력">
-            <button id="search-button" class="search-button">검색</button>
+            <button id="search-button" class="search-button" data-loading="false">검색</button>
         </div>
-        <div id="search-results" class="search-results"></div> <!-- 검색 결과 표시 -->
+        <div id="search-results" class="search-results"></div>
     </div>
 </div>
 <script>
+    const csrfToken = document.getElementById('csrf-token').value;
+    let userId = null;
+    let notifications = [];
+
+    // 버튼 중복 클릭 방지 헬퍼 함수
+    function preventMultipleClicks(button, callback) {
+        if (button.dataset.loading === "true") return;
+        button.dataset.loading = "true";
+        callback().finally(() => {
+            button.dataset.loading = "false";
+        });
+    }
+
+    // 유저 정보 가져오기
     async function fetchUserInfo() {
         const response = await fetch('/account/user/my-info');
         if (response.ok) {
             const userInfo = await response.json();
+            userId = userInfo.id;
+
             const profileImg = document.getElementById('profile-image');
             const displayName = document.getElementById('display-name');
             const displayMoney = document.getElementById('display-money');
@@ -278,101 +425,179 @@
         }
     }
 
+    // 알림 데이터 가져오기
+    async function fetchNotifications() {
+        const response = await fetch('/notice/list?isRead=false');
+        if (response.ok) {
+            notifications = await response.json();
+            renderNotifications(notifications);
+        }
+    }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // 필요한 DOM 요소들을 올바르게 가져옵니다.
-        const searchButton = document.getElementById('search-user-button');
-        const dialogOverlay = document.getElementById('dialog-overlay');
-        const searchDialog = document.getElementById('search-dialog');
-        const dialogClose = document.getElementById('dialog-close');
-        const searchInput = document.getElementById('search-input');
-        const searchResults = document.getElementById('search-results');
-        const searchActionButton = document.getElementById('search-button');
-        const userInfo = document.getElementById('user-info');
-        const myInfo = document.getElementById('my-info');
-        const dropdown = document.getElementById('dropdown');
+    // 알림 렌더링
+    function renderNotifications(notifications) {
+        const notificationBox = document.getElementById('notification-box');
+        const notificationCount = document.getElementById('notification-count');
 
-        // 다이얼로그를 열기
-        searchButton.addEventListener('click', () => {
-            dialogOverlay.style.display = 'block';
-            searchDialog.style.display = 'block';
-        });
+        notificationBox.innerHTML = '';
+        notificationCount.textContent = notifications.length;
+        notificationCount.style.display = notifications.length > 0 ? 'flex' : 'none';
 
-        // 다이얼로그를 닫기
-        function closeDialog() {
-            dialogOverlay.style.display = 'none';
-            searchDialog.style.display = 'none';
+        notifications
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .forEach(notification => {
+                const notificationItem = document.createElement('div');
+                notificationItem.classList.add('notification-item');
+                notificationItem.innerHTML = `
+                <div class="notification-icon">
+                    <img src="${window.location.origin}${notification.icon}" alt="icon">
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">${notification.title}</div>
+                    <div class="notification-description">${notification.description}</div>
+                    <div class="notification-date">${notification.date}</div>
+                </div>
+            `;
+                const actions = document.createElement('div');
+                actions.classList.add('notification-actions');
+
+                if (notification.isOption) {
+                    actions.innerHTML = `
+                    <button class="button-confirm" data-action="APPROVE" data-loading="false">예</button>
+                    <button class="button-cancel" data-action="REJECT" data-loading="false">아니오</button>
+                `;
+                } else {
+                    actions.innerHTML = `
+                    <button class="button-confirm" data-action="APPROVE" data-loading="false">확인</button>
+                `;
+                }
+
+                actions.addEventListener('click', (event) => {
+                    const button = event.target;
+                    preventMultipleClicks(button, async () => {
+                        await handleNotificationAction(button, notification);
+                    });
+                });
+
+                notificationItem.appendChild(actions);
+                notificationBox.appendChild(notificationItem);
+            });
+    }
+
+    // 알림 액션 처리
+    async function handleNotificationAction(button, notification) {
+        const action = button.dataset.action;
+        if (!action) return;
+        if (notification.presentId === null) {
+            await fetch(`/notice/${notification.noticeId}/check`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            });
+        } else {
+            await fetch(`/present/${notification.presentId}?status=${action}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            });
+        }
+        await fetchNotifications();
+        await fetchUserInfo();
+    }
+
+    // 알림 버튼 클릭 이벤트
+    const notificationButton = document.getElementById('notification-button');
+    const notificationBox = document.getElementById('notification-box');
+
+    notificationButton.addEventListener('click', () => {
+        if (notifications.length > 0) {
+            notificationBox.classList.toggle('open');
+        }
+    });
+
+    // 유저 검색 관련 기능
+    const dialogOverlay = document.getElementById('dialog-overlay');
+    const searchDialog = document.getElementById('search-dialog');
+    const dialogClose = document.getElementById('dialog-close');
+    const searchInput = document.getElementById('search-input');
+    const searchResults = document.getElementById('search-results');
+    const searchButton = document.getElementById('search-user-button');
+    const searchActionButton = document.getElementById('search-button');
+    const myInfo = document.getElementById('my-info');
+
+    myInfo.addEventListener('click', () => {
+        location.href = '/page/account/user/my-info';
+    });
+
+    searchButton.addEventListener('click', () => {
+        dialogOverlay.style.display = 'block';
+        searchDialog.style.display = 'block';
+    });
+
+    dialogClose.addEventListener('click', closeDialog);
+    dialogOverlay.addEventListener('click', closeDialog);
+
+    function closeDialog() {
+        dialogOverlay.style.display = 'none';
+        searchDialog.style.display = 'none';
+    }
+
+    // 유저 검색
+    searchActionButton.addEventListener('click', () => {
+        preventMultipleClicks(searchActionButton, handleSearch);
+    });
+
+    searchInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            preventMultipleClicks(searchActionButton, handleSearch);
+        }
+    });
+
+    async function handleSearch() {
+        const name = searchInput.value.trim();
+        if (!name) return;
+
+        const response = await fetch(`/account/user/search?name=${name}`);
+        if (response.ok) {
+            const results = await response.json();
+            displaySearchResults(results);
+        } else {
+            alert('검색에 실패했습니다.');
+        }
+    }
+
+    function displaySearchResults(results) {
+        searchResults.innerHTML = '';
+        if (results.length === 0) {
+            const noResultsMessage = document.createElement('div');
+            noResultsMessage.textContent = '검색 결과가 없습니다.';
+            noResultsMessage.style.color = '#666';
+            noResultsMessage.style.marginTop = '20px';
+            noResultsMessage.style.fontSize = '16px';
+            searchResults.appendChild(noResultsMessage);
+            return;
         }
 
-        dialogClose.addEventListener('click', closeDialog); // X 버튼 클릭 시
-        dialogOverlay.addEventListener('click', closeDialog); // 배경 클릭 시
-
-        // 검색 실행
-        searchActionButton.addEventListener('click', handleSearch);
-        searchInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                handleSearch();
-            }
-        });
-
-        // 검색 로직
-        async function handleSearch() {
-            const name = searchInput.value.trim();
-            if (!name) {
-                return;
-            }
-
-            const response = await fetch(`/account/user/search?name=${name}`);
-            if (response.ok) {
-                const results = await response.json();
-                displaySearchResults(results);
-            } else {
-                alert('검색에 실패했습니다.');
-            }
-        }
-
-        // 유저 정보 메뉴 핸들링
-        userInfo.addEventListener('click', () => {
-            dropdown.classList.toggle('open');
-        });
-
-        myInfo.addEventListener('click', () => {
-            location.href = '/page/account/user/my-info';
-        });
-
-        document.addEventListener('click', (event) => {
-            if (!userInfo.contains(event.target)) {
-                dropdown.classList.remove('open');
-            }
-        });
-
-        function displaySearchResults(results) {
-            searchResults.innerHTML = ''; // 이전 결과 초기화
-            if (results.length === 0) {
-                const noResultsMessage = document.createElement('div');
-                noResultsMessage.textContent = '검색 결과가 없습니다.';
-                noResultsMessage.style.color = '#666';
-                noResultsMessage.style.marginTop = '20px';
-                noResultsMessage.style.fontSize = '16px';
-                searchResults.appendChild(noResultsMessage);
-                return;
-            }
-            results.forEach((user) => {
-                const userCard = document.createElement('div');
-                userCard.classList.add('user-card');
-                userCard.innerHTML = `
+        results.forEach((user) => {
+            const userCard = document.createElement('div');
+            userCard.classList.add('user-card');
+            userCard.innerHTML = `
             <div class="profile-img">
                 ${user.profileUrl ? `<img src="${user.profileUrl}" alt="">` : ''}
             </div>
             <div>${user.displayName}</div>
         `;
-                userCard.addEventListener('click', () => displayUserInfo(user));
-                searchResults.appendChild(userCard);
-            });
-        }
+            userCard.addEventListener('click', () => displayUserInfo(user));
+            searchResults.appendChild(userCard);
+        });
+    }
 
-        function displayUserInfo(user) {
-            searchResults.innerHTML = `
+    function displayUserInfo(user) {
+        searchResults.innerHTML = `
         <table class="user-details-table">
             <tr>
                 <td>닉네임</td>
@@ -392,14 +617,62 @@
             </tr>
         </table>
         <div style="margin-top: 20px;">
-            <button class="search-button">기부하기</button>
+            <button class="search-button donate-button" data-loading="false">기부하기</button>
             <button class="search-button">빌려주기</button>
         </div>
     `;
-        }
 
-        // 초기 유저 정보 가져오기
-        fetchUserInfo();
+        const donateButton = document.querySelector('.donate-button');
+        donateButton.addEventListener('click', () => {
+            preventMultipleClicks(donateButton, async () => openDonatePopup(user.id));
+        });
+    }
+
+    function openDonatePopup(userId) {
+        const popupUrl = `/page/present/donate?userId=${userId}`;
+        window.open(popupUrl, 'donatePopup', 'width=500,height=600,resizable=no,scrollbars=yes');
+        window.addEventListener('message', function (event) {
+            if (event.origin !== window.location.origin) return;
+            console.log("close popup");
+            fetchUserInfo();
+        });
+    }
+
+    // 외부 클릭 시 알림 박스 닫기
+    document.addEventListener('click', (event) => {
+        if (!notificationButton.contains(event.target) && !notificationBox.contains(event.target)) {
+            notificationBox.classList.remove('open');
+        }
+    });
+
+    // 외부 클릭 시 드롭다운 닫기
+    const userInfo = document.getElementById('user-info');
+    const dropdown = document.getElementById('dropdown');
+
+    userInfo.addEventListener('click', () => {
+        dropdown.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!userInfo.contains(event.target) && !dropdown.contains(event.target)) {
+            dropdown.classList.remove('open');
+        }
+    });
+
+    // WebSocket 연결
+    document.addEventListener('DOMContentLoaded', async () => {
+        await fetchUserInfo();
+        await fetchNotifications();
+
+        const socket = new WebSocket(`${window.location.origin.replace('http', 'ws')}/notice?userId=${userId}`);
+        socket.onmessage = async (event) => {
+            const data = JSON.parse(event.data);
+            if (data.eventName === 'notice_info') {
+                notifications.unshift(data.content);
+                renderNotifications(notifications);
+                await fetchUserInfo();
+            }
+        };
     });
 </script>
 </body>

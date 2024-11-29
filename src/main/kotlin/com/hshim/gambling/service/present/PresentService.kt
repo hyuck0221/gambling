@@ -2,6 +2,7 @@ package com.hshim.gambling.service.present
 
 import com.hshim.gambling.database.present.Present
 import com.hshim.gambling.database.present.repository.PresentRepository
+import com.hshim.gambling.enums.notice.NoticeType
 import com.hshim.gambling.enums.present.PresentStatus
 import com.hshim.gambling.enums.present.PresentType
 import com.hshim.gambling.exception.GlobalException
@@ -46,7 +47,17 @@ class PresentService(
         when (type) {
             PresentType.PRESENT_POINT -> toUser.point += cost
             PresentType.PRESENT_MONEY -> toUser.money += cost
-            PresentType.DONATE -> toUser.money += cost
+            PresentType.DONATE -> {
+                toUser.money += cost
+                val noticeRequest = NoticeRequest(
+                    noticeType = NoticeType.DONATE_RESPONSE,
+                    to = this.fromUser!!,
+                    from = this.toUser,
+                    present = null,
+                    option = true,
+                )
+                noticeService.notice(noticeRequest)
+            }
         }
     }
 
@@ -55,10 +66,10 @@ class PresentService(
             PresentType.DONATE -> {
                 fromUser?.apply { money += cost }
                 val noticeRequest = NoticeRequest(
-                    noticeType = this.type.noticeType,
+                    noticeType = NoticeType.DONATE_RESPONSE,
                     to = this.fromUser!!,
                     from = this.toUser,
-                    present = this,
+                    present = null,
                     option = false,
                 )
                 noticeService.notice(noticeRequest)

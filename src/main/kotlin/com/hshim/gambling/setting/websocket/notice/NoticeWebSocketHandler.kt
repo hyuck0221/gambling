@@ -8,10 +8,12 @@ import org.springframework.web.socket.handler.TextWebSocketHandler
 
 class NoticeWebSocketHandler(private val sessionManager: SessionManager) : TextWebSocketHandler() {
     override fun afterConnectionEstablished(session: WebSocketSession) {
-        sessionManager.addSession(session, WebSocketSessionType.NOTICE)
+        val userId = session.attributes["userId"] as String
+        sessionManager.addSession(session, userId, WebSocketSessionType.NOTICE)
     }
 
     override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
-        sessionManager.removeSession(session, WebSocketSessionType.NOTICE)
+        val userId = session.attributes["userId"] as String
+        sessionManager.removeSession(session, userId, WebSocketSessionType.NOTICE)
     }
 }

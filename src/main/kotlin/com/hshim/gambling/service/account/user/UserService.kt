@@ -8,6 +8,7 @@ import com.hshim.gambling.exception.GlobalException
 import com.hshim.gambling.model.account.user.UserRequest
 import com.hshim.gambling.model.account.user.UserResponse
 import com.hshim.gambling.service.account.oauth2.CustomOAuth2UserService
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -42,7 +43,11 @@ class UserService(
     }
 
     @Transactional(readOnly = true)
-    fun search(name: String) = discordUserRepository.findAllByName(name)
+    fun search(name: String): List<User> {
+        val me = getUser()
+        val pageable = Pageable.ofSize(5)
+        return discordUserRepository.findAllByNameAndUserIdNot(name, me.id, pageable).content
+    }
 
     @Transactional(readOnly = true)
     fun getInfo(id: String): UserResponse {

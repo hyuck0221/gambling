@@ -19,8 +19,8 @@ class Notice(
     @JoinColumn(name = "user_id", nullable = false, unique = false)
     val user: User,
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "present_id", nullable = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "present_id", nullable = true, unique = false)
     val present: Present?,
 
     @Column(nullable = false)

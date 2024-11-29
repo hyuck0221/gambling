@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>기부하기</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 400px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .search-section {
+            margin-bottom: 20px;
+        }
+
+        .search-section input {
+            width: calc(100% - 90px);
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .search-section button {
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .search-section button:hover {
+            background-color: #0056b3;
+        }
+
+        .user-results {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .user-card {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: start;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .user-card:hover {
+            background-color: #f0f0f0;
+        }
+
+        .user-card .profile-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ccc;
+            overflow: hidden;
+            margin-right: 10px;
+        }
+
+        .user-card .profile-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-card .user-name {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .donate-section {
+            margin-top: 20px;
+            display: none; /* 기본적으로 숨김 */
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .donate-section .info {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .donate-section input {
+            width: 92%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .donate-section .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .donate-button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .donate-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<form id="csrf-form" th:action="@{/logout}" method="post" style="display: none;">
+    <input type="hidden" name="_csrf" th:value="${_csrf.token}" id="csrf-token"/>
+</form>
+<div class="container">
+    <div class="header">기부하기</div>
+    <div class="search-section">
+        <input id="search-input" type="text" placeholder="유저이름 입력">
+        <button id="search-button">검색</button>
+    </div>
+    <div id="search-results" class="user-results"></div>
+    <div id="donate-section" class="donate-section">
+        <div class="info" id="available-money">기부 가능한 금액: 0원</div>
+        <input id="donate-amount" type="number" min="0" placeholder="기부 금액 입력">
+        <div id="error-message" class="error-message"></div>
+        <button id="donate-button" class="donate-button">기부하기</button>
+    </div>
+</div>
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get('userId');
+    const csrfToken = document.getElementById('csrf-token').value;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const searchButton = document.getElementById('search-button');
+        const donateButton = document.getElementById('donate-button');
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+
+        let selectedUserId = null;
+
+        // 내 정보 조회
+        const response = await fetch('/account/user/my-info');
+        let myMoney = 0;
+        if (response.ok) {
+            const myInfo = await response.json();
+            myMoney = myInfo.money; // 내 돈 설정
+        }
+
+        // URL 파라미터로 유저 선택
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get('userId');
+        if (userId) {
+            const userResponse = await fetch(`/account/user/${userId}`);
+            if (userResponse.ok) {
+                const user = await userResponse.json();
+                selectedUserId = user.id;
+
+                // 유저를 선택된 상태로 표시하고 내역에 추가
+                displaySearchResults([user]);
+                displayDonateSection(user);
+            }
+        }
+
+        // 검색 버튼 클릭
+        searchButton.addEventListener('click', async () => {
+            const name = searchInput.value.trim();
+            if (!name) return;
+
+            const response = await fetch(`/account/user/search?name=${name}`);
+            if (response.ok) {
+                const results = await response.json();
+                displaySearchResults(results);
+            }
+        });
+
+        // 검색창에서 엔터키로 검색
+        searchInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                searchButton.click();
+            }
+        });
+
+        // 유저 검색 결과 표시
+        function displaySearchResults(results) {
+            searchResults.innerHTML = ''; // 초기화
+            results.forEach((user) => {
+                const userCard = document.createElement('div');
+                userCard.classList.add('user-card');
+                userCard.innerHTML = `
+                <div class="profile-img">
+                    ${user.profileUrl ? `<img src="${user.profileUrl}" alt="">` : ''}
+                </div>
+                <div class="user-name">${user.displayName}</div>
+            `;
+                userCard.addEventListener('click', () => {
+                    selectedUserId = user.id; // 선택된 유저 ID 저장
+                    displayDonateSection(user);
+                });
+                searchResults.appendChild(userCard);
+            });
+        }
+
+        // 기부 섹션 표시
+        function displayDonateSection(user) {
+            const donateSection = document.getElementById('donate-section');
+            document.getElementById('available-money').textContent = `기부 가능한 금액: ${myMoney}원`;
+            donateSection.style.display = 'flex';
+        }
+
+        // 기부 처리
+        donateButton.addEventListener('click', async () => {
+            const amount = parseInt(document.getElementById('donate-amount').value, 10);
+            const errorMessage = document.getElementById('error-message');
+
+            if (isNaN(amount) || amount <= 0) {
+                errorMessage.textContent = "1원 이상 기부 가능합니다.";
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            if (amount > myMoney) {
+                errorMessage.textContent = "기부 가능 금액을 초과하였습니다.";
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            errorMessage.style.display = 'none';
+
+            try {
+                const response = await fetch(`/present/donate?toUserId=${selectedUserId}&cost=${amount}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                });
+                if (response.ok) {
+                    alert('기부되었습니다.');
+                    window.opener.postMessage(window.location.origin);
+                    window.close(); // 팝업 닫기
+                } else if (response.status === 400) {
+                    const error = await response.json();
+                    alert(error.message);
+                } else {
+                    alert('기부에 실패했습니다.');
+                }
+            } catch (err) {
+                console.error('Error during donation:', err);
+                alert('기부 처리 중 문제가 발생했습니다.');
+            }
+        });
+    });
+</script>
+</body>
+</html>
