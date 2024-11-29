@@ -10,10 +10,6 @@
             font-family: Arial, sans-serif;
         }
 
-        .container {
-            max-width: 40px;
-        }
-
         .header {
             position: fixed;
             top: 0;
@@ -24,6 +20,21 @@
             display: flex;
             align-items: center;
             z-index: 1000;
+        }
+
+        .search-user-button {
+            margin-right: 20px;
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .search-user-button:hover {
+            background-color: #0056b3;
         }
 
         .user-info {
@@ -91,27 +102,157 @@
         .dropdown.open {
             display: flex;
         }
+
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: none;
+            z-index: 1500;
+        }
+
+        .dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 2000;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .dialog input {
+            width: 70%;
+            padding: 8px;
+            margin-bottom: 10px; /* 인풋박스 아래 간격 추가 */
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .search-button {
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .search-button:hover {
+            background-color: #0056b3;
+        }
+
+        .dialog-close {
+            font-size: 14px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: black; /* 파란색 제거 */
+            font-weight: bold;
+        }
+
+        .dialog-close:hover {
+            color: #333;
+        }
+
+        .search-results {
+            margin-top: 20px; /* 결과 영역 위 간격 */
+            text-align: center; /* 검색 결과 가운데 정렬 */
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .user-card:hover {
+            background-color: #f0f0f0;
+        }
+
+        .user-card .profile-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ccc;
+            overflow: hidden;
+            margin-right: 10px;
+        }
+
+        .user-card .profile-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .user-details-table th, .user-details-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .user-details-table th {
+            background-color: #f8f8f8;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <div class="user-info" id="user-info">
-            <div class="profile-img" id="profile-img">
-                <img id="profile-image" src="" alt=""/>
-            </div>
-            <div class="user-details">
-                <div class="display-name" id="display-name"></div>
-                <div class="display-money" id="display-money"></div>
-            </div>
-            <div class="dropdown" id="dropdown">
-                <button id="my-info">내 정보</button>
-                <form th:action="@{/logout}" method="post" style="margin: 0;">
-                    <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
-                    <button type="submit">로그아웃</button>
-                </form>
-            </div>
+<div class="header">
+    <button id="search-user-button" class="search-user-button">유저 검색</button>
+    <div class="user-info" id="user-info">
+        <div class="profile-img" id="profile-img">
+            <img id="profile-image" src="" alt=""/>
         </div>
+        <div class="user-details">
+            <div class="display-name" id="display-name"></div>
+            <div class="display-money" id="display-money"></div>
+        </div>
+        <div class="dropdown" id="dropdown">
+            <button id="my-info">내 정보</button>
+            <form th:action="@{/logout}" method="post" style="margin: 0;">
+                <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
+                <button type="submit">로그아웃</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 다이얼로그 -->
+<div class="dialog-overlay" id="dialog-overlay"></div>
+<div class="dialog" id="search-dialog">
+    <div style="text-align: right;">
+        <button id="dialog-close" class="dialog-close">X</button>
+    </div>
+    <div class="dialog-content">
+        <div>
+            <input id="search-input" type="text" placeholder="유저이름 입력">
+            <button id="search-button" class="search-button">검색</button>
+        </div>
+        <div id="search-results" class="search-results"></div> <!-- 검색 결과 표시 -->
     </div>
 </div>
 <script>
@@ -137,19 +278,66 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        fetchUserInfo();
 
+    document.addEventListener('DOMContentLoaded', () => {
+        // 필요한 DOM 요소들을 올바르게 가져옵니다.
+        const searchButton = document.getElementById('search-user-button');
+        const dialogOverlay = document.getElementById('dialog-overlay');
+        const searchDialog = document.getElementById('search-dialog');
+        const dialogClose = document.getElementById('dialog-close');
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+        const searchActionButton = document.getElementById('search-button');
         const userInfo = document.getElementById('user-info');
         const myInfo = document.getElementById('my-info');
         const dropdown = document.getElementById('dropdown');
 
+        // 다이얼로그를 열기
+        searchButton.addEventListener('click', () => {
+            dialogOverlay.style.display = 'block';
+            searchDialog.style.display = 'block';
+        });
+
+        // 다이얼로그를 닫기
+        function closeDialog() {
+            dialogOverlay.style.display = 'none';
+            searchDialog.style.display = 'none';
+        }
+
+        dialogClose.addEventListener('click', closeDialog); // X 버튼 클릭 시
+        dialogOverlay.addEventListener('click', closeDialog); // 배경 클릭 시
+
+        // 검색 실행
+        searchActionButton.addEventListener('click', handleSearch);
+        searchInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                handleSearch();
+            }
+        });
+
+        // 검색 로직
+        async function handleSearch() {
+            const name = searchInput.value.trim();
+            if (!name) {
+                return;
+            }
+
+            const response = await fetch(`/account/user/search?name=${name}`);
+            if (response.ok) {
+                const results = await response.json();
+                displaySearchResults(results);
+            } else {
+                alert('검색에 실패했습니다.');
+            }
+        }
+
+        // 유저 정보 메뉴 핸들링
         userInfo.addEventListener('click', () => {
             dropdown.classList.toggle('open');
         });
 
         myInfo.addEventListener('click', () => {
-            location.href = '/page/account/user/my-info'
+            location.href = '/page/account/user/my-info';
         });
 
         document.addEventListener('click', (event) => {
@@ -157,6 +345,61 @@
                 dropdown.classList.remove('open');
             }
         });
+
+        function displaySearchResults(results) {
+            searchResults.innerHTML = ''; // 이전 결과 초기화
+            if (results.length === 0) {
+                const noResultsMessage = document.createElement('div');
+                noResultsMessage.textContent = '검색 결과가 없습니다.';
+                noResultsMessage.style.color = '#666';
+                noResultsMessage.style.marginTop = '20px';
+                noResultsMessage.style.fontSize = '16px';
+                searchResults.appendChild(noResultsMessage);
+                return;
+            }
+            results.forEach((user) => {
+                const userCard = document.createElement('div');
+                userCard.classList.add('user-card');
+                userCard.innerHTML = `
+            <div class="profile-img">
+                ${user.profileUrl ? `<img src="${user.profileUrl}" alt="">` : ''}
+            </div>
+            <div>${user.displayName}</div>
+        `;
+                userCard.addEventListener('click', () => displayUserInfo(user));
+                searchResults.appendChild(userCard);
+            });
+        }
+
+        function displayUserInfo(user) {
+            searchResults.innerHTML = `
+        <table class="user-details-table">
+            <tr>
+                <td>닉네임</td>
+                <td>${user.displayName}</td>
+            </tr>
+            <tr>
+                <td>로그인 타입</td>
+                <td>${user.displayUserType}</td>
+            </tr>
+            <tr>
+                <td>돈</td>
+                <td>${user.money}</td>
+            </tr>
+            <tr>
+                <td>포인트</td>
+                <td>${user.point}</td>
+            </tr>
+        </table>
+        <div style="margin-top: 20px;">
+            <button class="search-button">기부하기</button>
+            <button class="search-button">빌려주기</button>
+        </div>
+    `;
+        }
+
+        // 초기 유저 정보 가져오기
+        fetchUserInfo();
     });
 </script>
 </body>

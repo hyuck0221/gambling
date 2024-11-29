@@ -18,6 +18,7 @@ class UserService(
     private val discordUserRepository: DiscordUserRepository,
     private val customOAuth2UserService: CustomOAuth2UserService,
 ) {
+    @Transactional(readOnly = true)
     fun getUser(id: String): User {
         val user = userRepository.findByIdOrNull(id)
         when {
@@ -27,16 +28,21 @@ class UserService(
         return user!!
     }
 
+    @Transactional(readOnly = true)
     fun getUserByDiscordId(discordId: String): User {
         val discordUser = discordUserRepository.findByDiscordId(discordId)
             ?: throw GlobalException.NOT_FOUND_USER.exception
         return getUser(discordUser.id)
     }
 
+    @Transactional(readOnly = true)
     fun getUser(): User {
         val attribute = customOAuth2UserService.getDiscordAttribute()
         return getUserByDiscordId(attribute.id)
     }
+
+    @Transactional(readOnly = true)
+    fun search(name: String) = discordUserRepository.findAllByName(name)
 
     @Transactional(readOnly = true)
     fun getInfo(id: String): UserResponse {

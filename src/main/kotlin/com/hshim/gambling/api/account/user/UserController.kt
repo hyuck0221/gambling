@@ -30,4 +30,9 @@ class UserController(private val userService: UserService) {
     fun synchronization(@PathVariable id: String): UserResponse {
         return userService.synchronization(id)
     }
+
+    @GetMapping("/search")
+    fun search(@RequestParam name: String): List<UserResponse> {
+        return userService.search(name).map { UserResponse(it) }
+    }
 }
