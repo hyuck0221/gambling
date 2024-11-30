@@ -8,5 +8,5 @@ import org.springframework.web.bind.annotation.RequestMapping
 @RequestMapping("/page/account/user")
 class UserPageController {
     @GetMapping("/my-info")
-    fun myInfo() = "/page/account/user/my-info"
+    fun myInfo() = "page/account/user/my-info"
 }

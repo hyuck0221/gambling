@@ -4,9 +4,6 @@ server:
     include-message: always
 
 spring:
-  thymeleaf:
-    prefix: classpath:/templates/
-    suffix: .html
   security:
     oauth2:
       client:
@@ -26,6 +23,10 @@ spring:
             token-uri: https://discord.com/api/oauth2/token
             user-info-uri: https://discord.com/api/users/@me
             user-name-attribute: id
+  session:
+    jdbc:
+      initialize-schema: always
+    timeout: 30d
 
 springdoc:
   api-docs:
