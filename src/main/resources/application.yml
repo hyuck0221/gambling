@@ -4,6 +4,9 @@ server:
     include-message: always
 
 spring:
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
   security:
     oauth2:
       client:
