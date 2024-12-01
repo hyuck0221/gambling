@@ -1,11 +1,13 @@
 package com.hshim.gambling.service.present
 
+import com.hshim.gambling.database.dailycheck.DailyCheck
+import com.hshim.gambling.database.dailycheck.repository.DailyCheckRepository
 import com.hshim.gambling.database.present.Present
 import com.hshim.gambling.database.present.repository.PresentRepository
+import com.hshim.gambling.enums.dailycheck.DailyCheckType
 import com.hshim.gambling.enums.notice.NoticeType
 import com.hshim.gambling.enums.present.PresentStatus
 import com.hshim.gambling.enums.present.PresentType
-import com.hshim.gambling.exception.GlobalException
 import com.hshim.gambling.exception.GlobalException.*
 import com.hshim.gambling.model.notice.NoticeRequest
 import com.hshim.gambling.service.account.user.UserService
@@ -13,10 +15,12 @@ import com.hshim.gambling.service.notice.NoticeService
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 
 @Service
 class PresentService(
     private val presentRepository: PresentRepository,
+    private val dailyCheckRepository: DailyCheckRepository,
     private val noticeService: NoticeService,
     private val userService: UserService,
 ) {
@@ -58,6 +62,7 @@ class PresentService(
                 )
                 noticeService.notice(noticeRequest)
             }
+            PresentType.DAILY_CHECK -> toUser.money += cost
         }
     }
 
@@ -125,6 +130,42 @@ class PresentService(
         )
         fromUser.money -= cost
         savePresent(present)
+    }
+
+    @Transactional
+    fun dailyCheck() {
+        val user = userService.getUser()
+        val now = LocalDate.now().atStartOfDay()
+        val isCheck = dailyCheckRepository.existsByUserAndCreateDateAfter(
+            user = user,
+            createDate = now,
+        )
+        if (!isCheck) {
+            val isYesterdayCheck = dailyCheckRepository.existsByUserAndCreateDateBetween(
+                user = user,
+                startCreateDate = now.minusDays(1),
+                endCreateDate = now.minusNanos(1),
+            )
+            val dailyCheckTypes = mutableListOf(DailyCheckType.getDailyType(now))
+
+            // 연속 출석 보상
+            if (isYesterdayCheck) dailyCheckTypes.add(DailyCheckType.SEQUENCE)
+
+            val dailyCheck = dailyCheckRepository.save(
+                DailyCheck(
+                    user = user,
+                    types = dailyCheckTypes,
+                )
+            )
+            user.addMoney(dailyCheck.cost)
+            val present = Present(
+                toUser = user,
+                fromUser = null,
+                type = PresentType.DAILY_CHECK,
+                cost = dailyCheck.cost,
+            )
+            savePresent(present)
+        }
     }
 
     private fun savePresent(present: Present) {

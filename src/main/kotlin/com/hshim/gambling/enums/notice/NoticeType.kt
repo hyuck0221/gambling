@@ -32,6 +32,11 @@ enum class NoticeType(
         isOption = true,
         icon = "invite-game.png",
     ),
+    DAILY_CHECK(
+        title = "출석 보상",
+        isOption = false,
+        icon = "daily-check.png",
+    ),
     ;
 
     val icon: String? = icon?.let { "/icon/notice/$it" }
@@ -54,6 +59,7 @@ enum class NoticeType(
             }
 
             INVITE_GAME -> "${from?.displayName ?: "알 수 없는 사용자"}님이 게임에 초대하였습니다."
+            DAILY_CHECK -> "$cost 출석 보상이 도착했습니다."
         }
     }
 }

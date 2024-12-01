@@ -44,6 +44,18 @@ class User(
     @Column(nullable = false)
     var point: Long = 0,
 ) : BaseTimeEntity() {
+    fun addMoney(cost: Long) {
+        money += cost
+    }
+
+    fun minusMoney(cost: Long) {
+        money -= cost
+        if (money < 0) {
+            borrowedMoney -= money * -1
+            money = 0
+        }
+    }
+
     fun lose(
         gameMode: GameMode,
         cost: Long,
@@ -54,21 +66,11 @@ class User(
                 point -= cost
                 if (point < 0) {
                     val remainingCost = point * -1
-                    money -= remainingCost
+                    minusMoney(remainingCost)
                     point = 0
-                    if (remainingCost < 0) {
-                        borrowedMoney -= remainingCost * -1
-                        money = 0
-                    }
                 }
             }
-            else -> {
-                money -= cost
-                if (money < 0) {
-                    borrowedMoney -= money * -1
-                    money = 0
-                }
-            }
+            else -> minusMoney(cost)
         }
     }
 }

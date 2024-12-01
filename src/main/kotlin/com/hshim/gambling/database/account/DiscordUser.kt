@@ -23,7 +23,7 @@ class DiscordUser(
     @Column(nullable = true)
     var banner: String?,
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(255)")
     @Enumerated(EnumType.STRING)
     var premiumType: DiscordPremiumType,
 ) : User(

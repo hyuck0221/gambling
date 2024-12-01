@@ -23,7 +23,7 @@ class Notice(
     @JoinColumn(name = "present_id", nullable = true, unique = false)
     val present: Present?,
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(255)")
     @Enumerated(EnumType.STRING)
     val noticeType: NoticeType,
 

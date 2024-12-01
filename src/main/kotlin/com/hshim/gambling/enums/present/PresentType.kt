@@ -14,6 +14,9 @@ enum class PresentType(
     DONATE(
         noticeType = NoticeType.DONATE,
     ),
+    DAILY_CHECK(
+        noticeType = NoticeType.DAILY_CHECK,
+    )
     ;
 
     companion object {

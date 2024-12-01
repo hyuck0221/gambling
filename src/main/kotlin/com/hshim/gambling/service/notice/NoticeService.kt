@@ -31,7 +31,7 @@ class NoticeService(
             ?: throw GlobalException.NOT_FOUND_NOTICE.exception
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     fun getNoticeInfos(isRead: Boolean?): List<NoticeResponse> {
         val user = userService.getUser()
         val notices = when (isRead) {

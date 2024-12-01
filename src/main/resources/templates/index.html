@@ -780,6 +780,13 @@
 
     // WebSocket 연결
     document.addEventListener('DOMContentLoaded', async () => {
+        fetch(`/main`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        });
+
         await fetchUserInfo();
         await fetchNotifications();
 

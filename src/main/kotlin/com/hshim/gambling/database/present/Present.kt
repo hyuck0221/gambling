@@ -23,11 +23,11 @@ class Present(
     @JoinColumn(name = "from_user_id", nullable = true, unique = false)
     val fromUser: User?,
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(255)")
     @Enumerated(EnumType.STRING)
     var status: PresentStatus = PresentStatus.WAIT,
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(255)")
     @Enumerated(EnumType.STRING)
     var type: PresentType,
 

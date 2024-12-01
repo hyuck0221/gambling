@@ -31,6 +31,7 @@ class Game(
         name = "game_mode",
         insertable = false,
         updatable = false,
+        columnDefinition = "varchar(255)",
     )
     @Enumerated(EnumType.STRING)
     open var gameMode: GameMode,
